@@ -1,6 +1,6 @@
 const connect = require("../db/connect"); // Certifique-se de que esse módulo é capaz de criar uma conexão com o banco
 
-module.exports = class signInController {
+module.exports = class LoginController {
     static async postLogin(req, res) {
         const { email, senha } = req.body;
     
