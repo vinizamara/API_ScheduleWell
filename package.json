@@ -11,12 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.6.7",
-<<<<<<< HEAD
-    "bcryptjs": "^2.4.3",
-    "body-parser": "^1.20.2",
-=======
     "bcrypt": "^5.1.1",
->>>>>>> 2e54c772d9c18f96bbe241eb54ece895ca9e17b4
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
