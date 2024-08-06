@@ -41,7 +41,7 @@ module.exports = class userController {
     //Listar Usuários
     static async getUsers(req, res) {
         try {
-            const [results] = await db.promise().query('SELECT id, nome, email FROM usuario');
+            const [results] = await db.promise().query('SELECT id_usuario, nome, email FROM usuario');
             return res.status(200).json(results);
         } catch (error) {
             console.error(error);
@@ -55,7 +55,7 @@ module.exports = class userController {
         const { nome, email, senha } = req.body;
 
         try {
-            const [existingUser] = await db.promise().query('SELECT * FROM usuario WHERE id = ?', [id]);
+            const [existingUser] = await db.promise().query('SELECT * FROM usuario WHERE id_usuario = ?', [id]);
 
             if (existingUser.length === 0) {
                 return res.status(404).json({ error: 'Usuário não encontrado' });
@@ -86,7 +86,7 @@ module.exports = class userController {
 
             params.push(id);
 
-            await db.promise().query(`UPDATE usuario SET ${updates.join(', ')} WHERE id = ?`, params);
+            await db.promise().query(`UPDATE usuario SET ${updates.join(', ')} WHERE id_usuario = ?`, params);
 
             return res.status(200).json({ message: 'Usuário atualizado com sucesso' });
         } catch (error) {
@@ -100,13 +100,13 @@ module.exports = class userController {
         const { id } = req.params;
 
         try {
-            const [existingUser] = await db.promise().query('SELECT * FROM usuario WHERE id = ?', [id]);
+            const [existingUser] = await db.promise().query('SELECT * FROM usuario WHERE id_usuario = ?', [id]);
 
             if (existingUser.length === 0) {
                 return res.status(404).json({ error: 'Usuário não encontrado' });
             }
 
-            await db.promise().query('DELETE FROM usuario WHERE id = ?', [id]);
+            await db.promise().query('DELETE FROM usuario WHERE id_usuario = ?', [id]);
 
             return res.status(200).json({ message: 'Usuário deletado com sucesso' });
         } catch (error) {
