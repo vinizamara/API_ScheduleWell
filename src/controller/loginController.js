@@ -1,4 +1,4 @@
-const connect = require("../db/connect"); // Certifique-se de que esse módulo é capaz de criar uma conexão com o banco
+const connect = require("../db/connect"); // conexão com o banco
 
 module.exports = class LoginController {
     static async postLogin(req, res) {
@@ -8,7 +8,7 @@ module.exports = class LoginController {
           return res.status(400).json({ error: "Email e Senha são obrigatórios" });
         }
     
-        const query = `SELECT * FROM user WHERE email = '${email}' AND Senha = '${senha}'`;
+        const query = `SELECT * FROM Usuario WHERE email = '${email}' AND Senha = '${senha}'`;
     
         try {
           connect.query(query, function (err, results) {
