@@ -10,5 +10,6 @@ router.get('/getUsers/', UserController.getUsers);
 router.put('/updateUser/:id', UserController.updateUser);
 router.delete('/deleteUser/:id', UserController.deleteUser);
 router.post('/login/', LoginController.postLogin);
+router.post('/agenda/', AgendaController.postAgenda);
 module.exports = router
 
