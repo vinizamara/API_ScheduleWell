@@ -68,37 +68,65 @@ module.exports = class agendaController {
     const { idAgenda, descricao } = req.body;
 
     // Valida os parâmetros
-    if (!idAgenda || !descricao) {
-      return res
-        .status(400)
-        .json({ message: "ID da agenda e descrição são obrigatórios." });
+    if (!idAgenda) {
+      return res.status(400).json({ message: "ID da agenda é obrigatório." });
     }
 
     try {
-      // Query para atualizar o texto da nota
-      const query = `
+      // Verifica se a descrição está vazia ou contém apenas espaços em branco
+      if (!descricao || descricao.trim().length === 0) {
+        // Query para deletar a nota
+        const deleteQuery = `
+                DELETE FROM Agenda 
+                WHERE ID_Agenda = ?
+            `;
+
+        // Executa a query de exclusão
+        const [deleteResult] = await db
+          .promise()
+          .execute(deleteQuery, [idAgenda]);
+
+        // Verifica se a exclusão foi realizada
+        if (deleteResult.affectedRows === 0) {
+          return res.status(404).json({
+            message: "Nenhuma nota encontrada com o ID especificado.",
+          });
+        }
+
+        // Retorna sucesso na exclusão
+        return res.status(200).json({
+          message: "Nota deletada com sucesso.",
+        });
+      } else {
+        // Query para atualizar o texto da nota
+        const updateQuery = `
                 UPDATE Agenda 
                 SET Descricao = ? 
                 WHERE ID_Agenda = ?
             `;
 
-      // Executa a query
-      const [result] = await db.promise().execute(query, [descricao, idAgenda]);
+        // Executa a query de atualização
+        const [updateResult] = await db
+          .promise()
+          .execute(updateQuery, [descricao, idAgenda]);
 
-      // Verifica se a atualização foi realizada
-      if (result.affectedRows === 0) {
-        return res.status(404).json({
-          message: "Nenhuma nota encontrada com o ID especificado.",
+        // Verifica se a atualização foi realizada
+        if (updateResult.affectedRows === 0) {
+          return res.status(404).json({
+            message: "Nenhuma nota encontrada com o ID especificado.",
+          });
+        }
+
+        // Retorna sucesso na atualização
+        return res.status(200).json({
+          message: "Nota atualizada com sucesso.",
         });
       }
-
-      // Retorna sucesso
-      return res.status(200).json({
-        message: "Nota atualizada com sucesso.",
-      });
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ message: "Erro ao atualizar a nota." });
+      return res
+        .status(500)
+        .json({ message: "Erro ao atualizar ou deletar a nota." });
     }
   }
 };
