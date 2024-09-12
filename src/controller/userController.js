@@ -1,172 +1,128 @@
-const bcrypt = require('bcrypt'); // Importa a biblioteca bcrypt para hashear senhas.
-const db = require('../db/connect'); // Importa o módulo de conexão com o banco de dados.
+const bcrypt = require('bcrypt');
+const db = require('../db/connect'); // O pool com suporte a Promises já foi criado
 
 module.exports = class userController {
     // Método para cadastrar um novo usuário
     static async createUser(req, res) {
-        const { nome, senha, confirmarSenha, email } = req.body; // Extrai nome, senha, confirmar senha e email do corpo da requisição.
-    
-        // Verifica se todos os campos obrigatórios estão presentes.
+        const { nome, senha, confirmarSenha, email } = req.body;
+
         if (!nome || !senha || !confirmarSenha || !email) {
             return res.status(400).json({ error: 'Nome, senha, confirmação de senha e email são obrigatórios' });
         }
-    
-        // Verifica se as senhas correspondem.
+
         if (senha !== confirmarSenha) {
             return res.status(400).json({ error: 'As senhas não coincidem' });
         }
-    
-        // Verifica o comprimento do nome.
+
         if (nome.length < 3) {
             return res.status(400).json({ error: 'O nome deve ter pelo menos 3 caracteres' });
         }
-    
-        // Verifica o formato do email usando uma expressão regular simples.
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return res.status(400).json({ error: 'Formato de email inválido' });
         }
-    
-        // Verifica a força da senha: pelo menos 8 caracteres, contendo letras e números.
+
         const senhaRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
         if (!senhaRegex.test(senha)) {
             return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres, incluindo letras e números' });
         }
-    
+
         try {
-            // Verifica se o email já está em uso consultando o banco de dados.
-            const [existingUser] = await db.promise().query(
+            // Usa db.query() diretamente, sem .promise()
+            const [existingUser] = await db.query(
                 'SELECT * FROM usuario WHERE email = ?', [email]
             );
-    
-            // Se o email já estiver cadastrado, retorna um erro.
+
             if (existingUser.length > 0) {
                 return res.status(400).json({ error: 'Email já está em uso' });
             }
-    
-            // Gera um hash da senha para armazenamento seguro.
+
             const hashedSenha = await bcrypt.hash(senha, 10);
-    
-            // Insere o novo usuário no banco de dados com o nome, email e senha hasheada.
-            const [result] = await db.promise().query(
+
+            const [result] = await db.query(
                 'INSERT INTO usuario (nome, email, senha) VALUES (?, ?, ?)', 
                 [nome, email, hashedSenha]
             );
-    
-            // Retorna uma resposta de sucesso com o ID do novo usuário.
+
             return res.status(201).json({ message: 'Usuário criado com sucesso', userId: result.insertId });
         } catch (error) {
-            console.error(error); // Loga o erro no console para depuração.
-            return res.status(500).json({ error: 'Erro ao criar usuário' }); // Retorna um erro genérico de servidor.
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao criar usuário' });
         }
     }
-    
 
-    // Método para listar todos os usuários
     static async getUsers(req, res) {
         try {
-            // Consulta o banco de dados para obter todos os usuários com seus ID, nome e email.
-            const [results] = await db.promise().query('SELECT id_usuario, nome, email FROM usuario');
-            return res.status(200).json(results); // Retorna a lista de usuários.
+            const [results] = await db.query('SELECT id_usuario, nome, email FROM usuario');
+            return res.status(200).json(results);
         } catch (error) {
-            console.error(error); // Loga o erro no console para depuração.
-            return res.status(500).json({ error: 'Erro ao listar usuários' }); // Retorna um erro genérico de servidor.
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao listar usuários' });
         }
     }
 
-    // Método para atualizar um usuário existente
     static async updateUser(req, res) {
-        const { id } = req.params; // Extrai o ID do usuário dos parâmetros da URL.
-        const { nome, email, senha } = req.body; // Extrai nome, email e senha do corpo da requisição.
-
+        const { id } = req.params;
+        const { nome, email, senha } = req.body;
+    
         try {
-            // Verifica se o usuário existe consultando o banco de dados.
-            const [existingUser] = await db.promise().query('SELECT * FROM usuario WHERE id_usuario = ?', [id]);
-
-            // Se o usuário não for encontrado, retorna um erro.
+            const [existingUser] = await db.query('SELECT * FROM usuario WHERE id_usuario = ?', [id]);
+    
             if (existingUser.length === 0) {
                 return res.status(404).json({ error: 'Usuário não encontrado' });
             }
-
-            // Arrays para armazenar os campos a serem atualizados e os respectivos valores.
+    
             const updates = [];
             const params = [];
-
-            // Se o nome foi fornecido, adiciona-o à lista de atualizações.
+    
             if (nome) {
                 updates.push('nome = ?');
                 params.push(nome);
             }
-
-            // Se o email foi fornecido, adiciona-o à lista de atualizações.
+    
             if (email) {
                 updates.push('email = ?');
                 params.push(email);
             }
-
-            // Se a senha foi fornecida, hashea-a e adiciona-a à lista de atualizações.
+    
             if (senha) {
                 const hashedSenha = await bcrypt.hash(senha, 10);
                 updates.push('senha = ?');
                 params.push(hashedSenha);
             }
-
-            // Se nenhum campo foi fornecido para atualização, retorna um erro.
+    
             if (updates.length === 0) {
                 return res.status(400).json({ error: 'Nenhum campo para atualizar' });
             }
-
-            // Verifica o comprimento do nome.
-            if (nome.length < 3) {
-                return res.status(400).json({ error: 'O nome deve ter pelo menos 3 caracteres' });
-            }
-
-            // Verifica o formato do email usando uma expressão regular simples.
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                return res.status(400).json({ error: 'Formato de email inválido' });
-            }
-
-            // Verifica a força da senha: pelo menos 8 caracteres, contendo letras e números.
-            const senhaRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-            if (!senhaRegex.test(senha)) {
-                return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres, incluindo letras e números' });
-            }
-
-            params.push(id); // Adiciona o ID do usuário aos parâmetros para a query SQL.
-
-            // Executa a query de atualização no banco de dados.
-            await db.promise().query(`UPDATE usuario SET ${updates.join(', ')} WHERE id_usuario = ?`, params);
-
-            // Retorna uma resposta de sucesso.
+    
+            params.push(id);
+    
+            await db.query(`UPDATE usuario SET ${updates.join(', ')} WHERE id_usuario = ?`, params);
+    
             return res.status(200).json({ message: 'Usuário atualizado com sucesso' });
         } catch (error) {
-            console.error(error); // Loga o erro no console para depuração.
-            return res.status(500).json({ error: 'Erro ao atualizar usuário' }); // Retorna um erro genérico de servidor.
+            console.error('Erro ao atualizar usuário:', error);
+            return res.status(500).json({ error: 'Erro ao atualizar usuário' });
         }
-    }
+    }    
 
-    // Método para deletar um usuário existente
     static async deleteUser(req, res) {
-        const { id } = req.params; // Extrai o ID do usuário dos parâmetros da URL.
+        const { id } = req.params;
 
         try {
-            // Verifica se o usuário existe consultando o banco de dados.
-            const [existingUser] = await db.promise().query('SELECT * FROM usuario WHERE id_usuario = ?', [id]);
+            const [existingUser] = await db.query('SELECT * FROM usuario WHERE id_usuario = ?', [id]);
 
-            // Se o usuário não for encontrado, retorna um erro.
             if (existingUser.length === 0) {
                 return res.status(404).json({ error: 'Usuário não encontrado' });
             }
 
-            // Deleta o usuário do banco de dados.
-            await db.promise().query('DELETE FROM usuario WHERE id_usuario = ?', [id]);
+            await db.query('DELETE FROM usuario WHERE id_usuario = ?', [id]);
 
-            // Retorna uma resposta de sucesso.
             return res.status(200).json({ message: 'Usuário deletado com sucesso' });
         } catch (error) {
-            console.error(error); // Loga o erro no console para depuração.
-            return res.status(500).json({ error: 'Erro ao deletar usuário' }); // Retorna um erro genérico de servidor.
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao deletar usuário' });
         }
     }
 }
