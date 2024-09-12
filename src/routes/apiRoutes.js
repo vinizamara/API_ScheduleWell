@@ -5,6 +5,7 @@ const AnotacoesController = require('../controller/anotacoesController');
 const FinancasController = require('../controller/financasController');
 const ChecklistController = require('../controller/checklistController');
 const ItemChecklistController = require('../controller/itemChecklistController');
+const financeiroController = require('../controller/financeiroController');
 
 //Rotas do Usuario
 router.post('/createUser/', UserController.createUser);
@@ -24,6 +25,9 @@ router.post('/criarFinanca/', FinancasController.criarFinanca);
 router.get('/listarFinancas/:fk_id_usuario', FinancasController.listarFinancas);
 router.put('/atualizarFinanca/:id_financa', FinancasController.atualizarFinanca);
 router.delete('/deletarFinanca/:id_financa', FinancasController.deletarFinanca);
+
+//Rotas de Consulta de Finanças
+router.get('/gastosporMes/:fk_id_usuario', financeiroController.gastosporMes);
 
 
 // Rotas de Checklist
