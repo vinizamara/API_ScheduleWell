@@ -1,6 +1,5 @@
 //Constantes
 const router = require('express').Router();
-const LoginController = require('../controller/loginController');
 const UserController = require('../controller/userController');
 const AnotacoesController = require('../controller/anotacoesController');
 const FinancasController = require('../controller/financasController');
@@ -12,7 +11,7 @@ router.post('/createUser/', UserController.createUser);
 router.get('/getUsers/', UserController.getUsers);
 router.put('/updateUser/:id', UserController.updateUser);
 router.delete('/deleteUser/:id', UserController.deleteUser);
-router.post('/login/', LoginController.postLogin);
+router.post('/login/', UserController.postLogin);
 
 // Rotas de Anotações
 router.post('/postNota/', AnotacoesController.postNota);
