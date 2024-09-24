@@ -2,22 +2,26 @@ const db = require("../db/connect"); // Importa o pool de conexões
 
 module.exports = class checklistController {
   // Cadastro de Checklists
-  static async postChecklist(req, res) {
-    const { fkIdUsuario, titulo, data, descricao } = req.body;
-
-    if (!fkIdUsuario || !titulo || !data) {
-      return res.status(400).json({ message: "Dados obrigatórios faltando." });
+    // Cadastro de Checklists
+    static async postChecklist(req, res) {
+      const { fkIdUsuario, titulo, data, descricao } = req.body;
+  
+      if (!fkIdUsuario || !titulo || !data) {
+        return res.status(400).json({ message: "Dados obrigatórios faltando." });
+      }
+  
+      try {
+        const query = `INSERT INTO checklist (fk_id_usuario, titulo, data, descricao) VALUES (?, ?, ?, ?)`;
+        const [result] = await db.execute(query, [fkIdUsuario, titulo, data, descricao]);
+        console.log(result);
+        res.status(201).json({ message: "Checklist inserido com sucesso", result });
+      } catch (error) {
+        console.error(error);
+        // Extrai a mensagem de erro específica se disponível
+        const errorMessage = error.sqlMessage || "Erro ao inserir checklist";
+        res.status(500).json({ message: errorMessage });
+      }
     }
-
-    try {
-      const query = `INSERT INTO checklist (fk_id_usuario, titulo, data, descricao) VALUES (?, ?, ?, ?)`;
-      const [result] = await db.execute(query, [fkIdUsuario, titulo, data, descricao]);
-      res.status(201).json({ message: "Checklist inserido com sucesso", result });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Erro ao inserir checklist", error });
-    }
-  }
 
   // Verificação de Checklists
   static async getChecklist(req, res) {
