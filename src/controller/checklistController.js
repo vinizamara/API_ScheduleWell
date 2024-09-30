@@ -48,48 +48,50 @@ module.exports = class checklistController {
 
   // Atualização de Checklists
   static async updateChecklist(req, res) {
-    const { idChecklist, titulo, descricao } = req.body;
+    const { idChecklist } = req.params; // Obtendo o ID do checklist dos parâmetros da URL
+    const { titulo, descricao } = req.body;
 
     if (!idChecklist) {
-      return res.status(400).json({ message: "ID do checklist é obrigatório." });
+        return res.status(400).json({ message: "ID do checklist é obrigatório." });
     }
 
     try {
-      if (!titulo && !descricao) {
-        return res.status(400).json({ message: "Pelo menos um campo de atualização (título ou descrição) deve ser fornecido." });
-      }
-
-      let updateQuery = `UPDATE checklist SET `;
-      const queryParams = [];
-
-      if (titulo) {
-        updateQuery += `titulo = ? `;
-        queryParams.push(titulo);
-      }
-
-      if (descricao) {
-        if (titulo) {
-          updateQuery += `, `;
+        if (!titulo && !descricao) {
+            return res.status(400).json({ message: "Pelo menos um campo de atualização (título ou descrição) deve ser fornecido." });
         }
-        updateQuery += `descricao = ? `;
-        queryParams.push(descricao);
-      }
 
-      updateQuery += `WHERE id_checklist = ?`;
-      queryParams.push(idChecklist);
+        let updateQuery = `UPDATE checklist SET `;
+        const queryParams = [];
 
-      const [updateResult] = await db.execute(updateQuery, queryParams);
+        if (titulo) {
+            updateQuery += `titulo = ? `;
+            queryParams.push(titulo);
+        }
 
-      if (updateResult.affectedRows === 0) {
-        return res.status(404).json({ message: "Nenhum checklist encontrado com o ID especificado." });
-      }
+        if (descricao) {
+            if (titulo) {
+                updateQuery += `, `;
+            }
+            updateQuery += `descricao = ? `;
+            queryParams.push(descricao);
+        }
 
-      res.status(200).json({ message: "Checklist atualizado com sucesso." });
+        updateQuery += `WHERE id_checklist = ?`;
+        queryParams.push(idChecklist); // Adicionando o ID do checklist ao final da query
+
+        const [updateResult] = await db.execute(updateQuery, queryParams);
+
+        if (updateResult.affectedRows === 0) {
+            return res.status(404).json({ message: "Nenhum checklist encontrado com o ID especificado." });
+        }
+
+        res.status(200).json({ message: "Checklist atualizado com sucesso." });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Erro ao atualizar o checklist." });
+        console.error(error);
+        res.status(500).json({ message: "Erro ao atualizar o checklist." });
     }
-  }
+}
+
 
   // Exclusão de Checklists
   static async deleteChecklist(req, res) {

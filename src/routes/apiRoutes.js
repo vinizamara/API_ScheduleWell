@@ -17,7 +17,7 @@ router.post('/login/', UserController.postLogin);
 // Rotas de Anotações
 router.post('/postNota/', AnotacoesController.postNota);
 router.get('/getAnotacao/:idUsuario', AnotacoesController.getNota);
-router.put('/updateNota/', AnotacoesController.updateNota);
+router.put('/updateNota/:idAnotacao', AnotacoesController.updateNota);
 router.delete('/deleteNota/:idAnotacao', AnotacoesController.deleteNota); 
 
 //Rotas de Anotações de Finanças
@@ -33,7 +33,7 @@ router.get('/gastosporMes/:fk_id_usuario', financeiroController.gastosporMes);
 // Rotas de Checklist
 router.post('/postChecklist/', ChecklistController.postChecklist);
 router.get('/getChecklist/:idUsuario', ChecklistController.getChecklist);
-router.put('/updateChecklist/', ChecklistController.updateChecklist);
+router.put('/updateChecklist/:idChecklist', ChecklistController.updateChecklist);
 router.delete('/deleteChecklist/:idChecklist', ChecklistController.deleteChecklist);
 
 // Rotas de Item de Checklist

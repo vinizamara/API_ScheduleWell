@@ -28,10 +28,6 @@ module.exports = class AnotacoesController {
       return res.status(400).json({ message: "ID de usuário é obrigatório." });
     }
 
-    if (!Number.isInteger(parseInt(idUsuario, 10))) {
-      return res.status(400).json({ message: "ID de usuário deve ser um número inteiro válido." });
-    }
-
     const query = `SELECT * FROM anotacao WHERE fk_id_usuario = ?`;
 
     try {
@@ -50,8 +46,10 @@ module.exports = class AnotacoesController {
 
   // Atualização de Notas (Update)
   static async updateNota(req, res) {
-    const { idAnotacao, titulo, descricao } = req.body;
+    const { idAnotacao } = req.params; // Recebe o ID da anotação dos parâmetros da requisição
+    const { titulo, descricao, data } = req.body;
 
+    // Validação básica do ID da anotação
     if (!idAnotacao) {
       return res.status(400).json({ message: "ID da anotação é obrigatório." });
     }
@@ -61,10 +59,12 @@ module.exports = class AnotacoesController {
       return res.status(400).json({ message: "ID da anotação deve ser um número válido." });
     }
 
-    if (!titulo && !descricao) {
+    // Valida se pelo menos um dos campos foi fornecido para atualizar
+    if (!titulo && !descricao && !data) {
       return res.status(400).json({ message: "Pelo menos um campo para atualizar deve ser fornecido." });
     }
 
+    // Constrói a query dinamicamente conforme os campos fornecidos
     let query = 'UPDATE anotacao SET ';
     const params = [];
 
@@ -78,23 +78,34 @@ module.exports = class AnotacoesController {
       params.push(descricao);
     }
 
+    if (data) {
+      query += 'data = ?, ';
+      params.push(data);
+    }
+
+    // Remove a vírgula final e adiciona a cláusula WHERE
     query = query.slice(0, -2);
     query += ' WHERE id_anotacao = ?';
     params.push(idAnotacaoInt);
 
     try {
+      // Executa a query no banco de dados
       const [result] = await db.execute(query, params);
 
+      // Verifica se alguma linha foi atualizada
       if (result.affectedRows === 0) {
         return res.status(404).json({ message: "Nenhuma anotação encontrada com o ID especificado." });
       }
 
+      // Retorna sucesso
       res.status(200).json({ message: "Anotação atualizada com sucesso." });
     } catch (error) {
       console.error('Error details:', error);
       res.status(500).json({ message: "Erro ao atualizar a anotação.", error: error.message });
     }
   }
+
+
 
   // Exclusão de Notas (Delete)
   static async deleteNota(req, res) {
