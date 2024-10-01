@@ -49,15 +49,15 @@ module.exports = class checklistController {
   // Atualização de Checklists
   static async updateChecklist(req, res) {
     const { idChecklist } = req.params; // Obtendo o ID do checklist dos parâmetros da URL
-    const { titulo, descricao } = req.body;
+    const { titulo, descricao, data } = req.body; // Incluindo o campo data
 
     if (!idChecklist) {
         return res.status(400).json({ message: "ID do checklist é obrigatório." });
     }
 
     try {
-        if (!titulo && !descricao) {
-            return res.status(400).json({ message: "Pelo menos um campo de atualização (título ou descrição) deve ser fornecido." });
+        if (!titulo && !descricao && !data) {
+            return res.status(400).json({ message: "Pelo menos um campo de atualização (título, descrição ou data) deve ser fornecido." });
         }
 
         let updateQuery = `UPDATE checklist SET `;
@@ -76,6 +76,14 @@ module.exports = class checklistController {
             queryParams.push(descricao);
         }
 
+        if (data) {
+            if (titulo || descricao) {
+                updateQuery += `, `;
+            }
+            updateQuery += `data = ? `;
+            queryParams.push(data);
+        }
+
         updateQuery += `WHERE id_checklist = ?`;
         queryParams.push(idChecklist); // Adicionando o ID do checklist ao final da query
 
@@ -90,8 +98,7 @@ module.exports = class checklistController {
         console.error(error);
         res.status(500).json({ message: "Erro ao atualizar o checklist." });
     }
-}
-
+  }
 
   // Exclusão de Checklists
   static async deleteChecklist(req, res) {

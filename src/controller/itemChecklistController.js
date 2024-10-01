@@ -126,7 +126,7 @@ module.exports = class itemChecklistController {
     try {
       const deleteQuery = `
         DELETE FROM item_checklist
-        WHERE FK_ID_Checklist = ?
+        WHERE id_item_checklist = ?
       `;
       const [deleteResult] = await db.execute(deleteQuery, [fkIdChecklist]);
 
