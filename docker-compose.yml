@@ -1,0 +1,28 @@
+version: "3"
+
+services:
+  app:
+    build: . # Usa o Dockerfile local para buildar a imagem
+    command: /bin/sh -c "npm install && npm rebuild bcrypt --build-from-source && npm start" # Comando para instalar dependências, recompilar bcrypt, e iniciar o app
+    ports:
+      - "5000:5000" # Mapeia a porta 5000 do container para a porta 5000 da máquina
+    volumes:
+      - .:/usr/app # Monta o diretório da máquina no container
+    working_dir: /usr/app # Define o diretório de trabalho dentro do container
+    depends_on:
+      - db # O serviço app depende do serviço db
+
+  db:
+    image: mysql:5.7
+    restart: always # Reinicia automaticamente se o container parar
+    environment: # Configurações do banco de dados
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: schedulewell
+    ports:
+      - "3307:3307" # Mapeia a porta 3306 do container para a porta 3307 da máquina
+    volumes:
+      - db_data:/var/lib/mysql # Volume para persistência dos dados do banco de dados
+      - ./mysql-init:/docker-entrypoint-initdb.d # Scripts para inicialização do banco de dados
+
+volumes:
+  db_data: # Volume nomeado para persistir os dados do banco de dados
