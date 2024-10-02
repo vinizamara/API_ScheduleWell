@@ -27,7 +27,7 @@ router.put('/atualizarFinanca/:id_financa', FinancasController.atualizarFinanca)
 router.delete('/deletarFinanca/:id_financa', FinancasController.deletarFinanca);
 
 // Rotas de Consulta de Finanças
-router.get('/obterRendaAtual/:fk_id_usuario', financeiroController.obterRendaAtual);
+router.get('/obterRendaTotal/:fk_id_usuario', financeiroController.obterRendaTotal);
 router.get('/resumoFinanceiro/:fk_id_usuario', financeiroController.resumoFinanceiro);
 router.get('/transacoes/:fk_id_usuario', financeiroController.transacoes);
 

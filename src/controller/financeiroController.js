@@ -3,44 +3,95 @@ const moment = require("moment"); // Utilizando moment.js para trabalhar com dat
 
 module.exports = class financeiroController {
   // Método para obter a renda atual
-  static async obterRendaAtual(req, res) {
+  static async obterRendaTotal(req, res) {
     const { fk_id_usuario } = req.params;
-
+  
     if (!fk_id_usuario) {
       return res.status(400).json({ message: "ID do usuário é necessário." });
     }
-
+  
     try {
       const [financasResults] = await db.query(
         `
-          SELECT tipo_transacao, SUM(valor) as total
+          SELECT tipo_transacao, valor, frequencia, data
           FROM financa
           WHERE fk_id_usuario = ?
-          GROUP BY tipo_transacao
         `,
         [fk_id_usuario]
       );
-
+  
       if (financasResults.length === 0) {
         return res
           .status(404)
           .json({ message: "Nenhuma transação encontrada." });
       }
-
+  
       let totalGastos = 0;
       let totalGanhos = 0;
-
-      financasResults.forEach(({ tipo_transacao, total }) => {
-        if (tipo_transacao === "Gasto") {
-          totalGastos += parseFloat(total);
-        } else if (tipo_transacao === "Ganho") {
-          totalGanhos += parseFloat(total);
+  
+      const dataAtual = moment(); // Usando moment.js para manipular datas
+  
+      financasResults.forEach(({ tipo_transacao, valor, frequencia, data }) => {
+        const dataInicio = moment(data);
+  
+        switch (frequencia) {
+          case "Diária":
+            // Conta a quantidade de dias desde a data de início até hoje
+            const diasDiferenca = dataAtual.diff(dataInicio, 'days') + 1; // +1 para incluir o dia atual
+            if (tipo_transacao === "Gasto") {
+              totalGastos += parseFloat(valor) * diasDiferenca;
+            } else if (tipo_transacao === "Ganho") {
+              totalGanhos += parseFloat(valor) * diasDiferenca;
+            }
+            break;
+  
+          case "Semanal":
+            const semanasDiferenca = Math.floor(dataAtual.diff(dataInicio, 'weeks'));
+            if (semanasDiferenca >= 0) {
+              if (tipo_transacao === "Gasto") {
+                totalGastos += parseFloat(valor) * (semanasDiferenca + 1); // +1 para incluir a semana atual
+              } else if (tipo_transacao === "Ganho") {
+                totalGanhos += parseFloat(valor) * (semanasDiferenca + 1);
+              }
+            }
+            break;
+  
+          case "Mensal":
+            const mesesDiferenca = Math.floor(dataAtual.diff(dataInicio, 'months'));
+            if (mesesDiferenca >= 0) {
+              if (tipo_transacao === "Gasto") {
+                totalGastos += parseFloat(valor) * (mesesDiferenca + 1); // +1 para incluir o mês atual
+              } else if (tipo_transacao === "Ganho") {
+                totalGanhos += parseFloat(valor) * (mesesDiferenca + 1);
+              }
+            }
+            break;
+  
+          case "Anual":
+            const anosDiferenca = Math.floor(dataAtual.diff(dataInicio, 'years'));
+            if (anosDiferenca >= 0) {
+              if (tipo_transacao === "Gasto") {
+                totalGastos += parseFloat(valor) * (anosDiferenca + 1); // +1 para incluir o ano atual
+              } else if (tipo_transacao === "Ganho") {
+                totalGanhos += parseFloat(valor) * (anosDiferenca + 1);
+              }
+            }
+            break;
+  
+          default:
+            // Para transações únicas ou não reconhecidas
+            if (tipo_transacao === "Gasto") {
+              totalGastos += parseFloat(valor);
+            } else if (tipo_transacao === "Ganho") {
+              totalGanhos += parseFloat(valor);
+            }
+            break;
         }
       });
-
+  
       const saldo = totalGanhos - totalGastos;
-
-      return res.status(200).json({ renda_atual: saldo });
+  
+      return res.status(200).json({ renda_total: saldo });
     } catch (error) {
       console.error("Erro ao obter saldo como renda atual:", error);
       return res
@@ -51,32 +102,7 @@ module.exports = class financeiroController {
         });
     }
   }
-
-  // Método para atualizar a renda do usuário
-  static async atualizarRenda(req, res) {
-    const { fk_id_usuario } = req.params;
-    const { novaRenda } = req.body;
-
-    if (!fk_id_usuario || novaRenda === undefined) {
-      return res
-        .status(400)
-        .json({ message: "ID do usuário e nova renda são necessários." });
-    }
-
-    try {
-      await db.query(
-        `UPDATE usuario SET renda_atual = ? WHERE id_usuario = ?`,
-        [novaRenda, fk_id_usuario]
-      );
-
-      return res.status(200).json({ message: "Renda atualizada com sucesso." });
-    } catch (error) {
-      console.error("Erro ao atualizar renda:", error);
-      return res
-        .status(500)
-        .json({ message: "Erro ao atualizar renda.", error: error.message });
-    }
-  }
+  
 
   // Método para obter resumo financeiro: gastos, ganhos e saldo
   static async resumoFinanceiro(req, res) {
@@ -87,30 +113,62 @@ module.exports = class financeiroController {
     }
 
     try {
+      // Obter todas as transações do banco de dados para o mês atual
       const [financasResults] = await db.query(
         `
-          SELECT tipo_transacao, SUM(valor) as total
+          SELECT tipo_transacao, valor, data, frequencia
           FROM financa
-          WHERE fk_id_usuario = ?
-          GROUP BY tipo_transacao
+          WHERE fk_id_usuario = ? 
+            AND MONTH(data) = MONTH(CURRENT_DATE) 
+            AND YEAR(data) = YEAR(CURRENT_DATE)
         `,
         [fk_id_usuario]
       );
 
       if (financasResults.length === 0) {
-        return res
-          .status(404)
-          .json({ message: "Nenhuma transação encontrada." });
+        return res.status(404).json({ message: "Nenhuma transação encontrada." });
       }
 
       let totalGastos = 0;
       let totalGanhos = 0;
+      const dataAtual = moment();
 
-      financasResults.forEach(({ tipo_transacao, total }) => {
+      financasResults.forEach(({ tipo_transacao, valor, data, frequencia }) => {
+        const dataInicio = moment(data);
+        let contagem = 0;
+
+        // Calcular a contagem com base na frequência usando switch case
+        switch (frequencia) {
+          case 'Diária':
+            const diasDiferenca = dataAtual.diff(dataInicio, 'days');
+            contagem = diasDiferenca + 1; // +1 para incluir o dia de início
+            break;
+
+          case 'Semanal':
+            const semanasDiferenca = Math.floor(dataAtual.diff(dataInicio, 'weeks'));
+            contagem = semanasDiferenca + 1; // +1 para incluir a primeira semana
+            break;
+
+          case 'Mensal':
+            const mesesDiferenca = Math.floor(dataAtual.diff(dataInicio, 'months'));
+            contagem = mesesDiferenca + 1; // +1 para incluir o primeiro mês
+            break;
+
+          case 'Anual':
+            const anosDiferenca = Math.floor(dataAtual.diff(dataInicio, 'years'));
+            contagem = anosDiferenca + 1; // +1 para incluir o primeiro ano
+            break;
+
+          default:
+            contagem = 1; // Para transações únicas ou outras frequências não especificadas
+            break;
+        }
+
+        // Somar os valores de acordo com a contagem
         if (tipo_transacao === "Gasto") {
-          totalGastos += parseFloat(total);
+          totalGastos += parseFloat(valor) * contagem;
         } else if (tipo_transacao === "Ganho") {
-          totalGanhos += parseFloat(total);
+          totalGanhos += parseFloat(valor) * contagem;
         }
       });
 
@@ -120,18 +178,16 @@ module.exports = class financeiroController {
         ganhos: totalGanhos,
         gastos: totalGastos,
         saldo: saldo,
-        renda_atual: saldo,
       });
     } catch (error) {
       console.error("Erro ao obter resumo financeiro:", error);
-      return res
-        .status(500)
-        .json({
-          message: "Erro ao obter resumo financeiro.",
-          error: error.message,
-        });
+      return res.status(500).json({
+        message: "Erro ao obter resumo financeiro.",
+        error: error.message,
+      });
     }
   }
+
 
   // Método para obter todas as transações em um único endpoint, incluindo lógica de diária, semanal, mensal e anual
   static async transacoes(req, res) {
