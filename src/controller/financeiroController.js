@@ -1,64 +1,287 @@
-const db = require('../db/connect');
+const db = require("../db/connect");
+const moment = require("moment"); // Utilizando moment.js para trabalhar com datas
 
 module.exports = class financeiroController {
-    // Método para obter gastos mensais de acordo com a renda
-    static async gastosporMes(req, res) {
-        const { fk_id_usuario } = req.params;
-
-        if (!fk_id_usuario) {
-            return res.status(400).json({ message: 'ID do usuário é necessário.' });
-        }
-
-        try {
-            // 1. Consulta para obter a renda atual do usuário
-            const [rendaResults] = await db.query('SELECT renda_atual FROM usuario WHERE id_usuario = ?', [fk_id_usuario]);
-
-            if (rendaResults.length === 0) {
-                return res.status(404).json({ message: 'Usuário não encontrado.' });
-            }
-
-            const rendaAtual = parseFloat(rendaResults[0].renda_atual); // Garantindo que renda seja numérica
-
-            // 2. Consulta para obter as finanças do usuário apenas até a data atual
-            const [financasResults] = await db.query(`
-                SELECT tipo_transacao, valor, DATE_FORMAT(data, '%Y-%m') AS mes, data
-                FROM financa
-                WHERE fk_id_usuario = ?
-                AND data <= CURDATE()  -- Filtra os registros até a data atual
-                ORDER BY data ASC
-            `, [fk_id_usuario]);
-
-            if (financasResults.length === 0) {
-                return res.status(404).json({ message: 'Nenhuma anotação de finanças encontrada.' });
-            }
-
-            // 3. Agrupar e calcular gastos por mês
-            const gastosPorMes = financasResults.reduce((acc, { tipo_transacao, valor, mes, data }) => {
-                if (!acc[mes]) {
-                    // Se o mês ainda não está no acumulador, inicializamos com a renda atual
-                    acc[mes] = { renda: rendaAtual, gastos: 0 };
-                }
-                const valorNumerico = parseFloat(valor);
-
-                // Se for uma transação de 'Gasto', somamos ao total de gastos do mês
-                if (tipo_transacao === 'Gasto') {
-                    acc[mes].gastos += valorNumerico;
-                }
-                return acc;
-            }, {});
-
-            // 4. Criando a resposta formatada
-            const resultado = Object.keys(gastosPorMes).map(mes => ({
-                mes,
-                renda: gastosPorMes[mes].renda,
-                gastos: gastosPorMes[mes].gastos,
-                saldo: gastosPorMes[mes].renda - gastosPorMes[mes].gastos
-            }));
-
-            return res.status(200).json(resultado);
-        } catch (error) {
-            console.error('Erro ao obter gastos por mês:', error);
-            return res.status(500).json({ message: 'Erro ao obter gastos por mês.' });
-        }
+  // Método para obter a renda atual
+  static async obterRendaTotal(req, res) {
+    const { fk_id_usuario } = req.params;
+  
+    if (!fk_id_usuario) {
+      return res.status(400).json({ message: "ID do usuário é necessário." });
     }
+  
+    try {
+      const [financasResults] = await db.query(
+        `
+          SELECT tipo_transacao, valor, frequencia, data
+          FROM financa
+          WHERE fk_id_usuario = ?
+        `,
+        [fk_id_usuario]
+      );
+  
+      if (financasResults.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "Nenhuma transação encontrada." });
+      }
+  
+      let totalGastos = 0;
+      let totalGanhos = 0;
+  
+      const dataAtual = moment(); // Usando moment.js para manipular datas
+  
+      financasResults.forEach(({ tipo_transacao, valor, frequencia, data }) => {
+        const dataInicio = moment(data);
+  
+        switch (frequencia) {
+          case "Diária":
+            // Conta a quantidade de dias desde a data de início até hoje
+            const diasDiferenca = dataAtual.diff(dataInicio, 'days') + 1; // +1 para incluir o dia atual
+            if (tipo_transacao === "Gasto") {
+              totalGastos += parseFloat(valor) * diasDiferenca;
+            } else if (tipo_transacao === "Ganho") {
+              totalGanhos += parseFloat(valor) * diasDiferenca;
+            }
+            break;
+  
+          case "Semanal":
+            const semanasDiferenca = Math.floor(dataAtual.diff(dataInicio, 'weeks'));
+            if (semanasDiferenca >= 0) {
+              if (tipo_transacao === "Gasto") {
+                totalGastos += parseFloat(valor) * (semanasDiferenca + 1); // +1 para incluir a semana atual
+              } else if (tipo_transacao === "Ganho") {
+                totalGanhos += parseFloat(valor) * (semanasDiferenca + 1);
+              }
+            }
+            break;
+  
+          case "Mensal":
+            const mesesDiferenca = Math.floor(dataAtual.diff(dataInicio, 'months'));
+            if (mesesDiferenca >= 0) {
+              if (tipo_transacao === "Gasto") {
+                totalGastos += parseFloat(valor) * (mesesDiferenca + 1); // +1 para incluir o mês atual
+              } else if (tipo_transacao === "Ganho") {
+                totalGanhos += parseFloat(valor) * (mesesDiferenca + 1);
+              }
+            }
+            break;
+  
+          case "Anual":
+            const anosDiferenca = Math.floor(dataAtual.diff(dataInicio, 'years'));
+            if (anosDiferenca >= 0) {
+              if (tipo_transacao === "Gasto") {
+                totalGastos += parseFloat(valor) * (anosDiferenca + 1); // +1 para incluir o ano atual
+              } else if (tipo_transacao === "Ganho") {
+                totalGanhos += parseFloat(valor) * (anosDiferenca + 1);
+              }
+            }
+            break;
+  
+          default:
+            // Para transações únicas ou não reconhecidas
+            if (tipo_transacao === "Gasto") {
+              totalGastos += parseFloat(valor);
+            } else if (tipo_transacao === "Ganho") {
+              totalGanhos += parseFloat(valor);
+            }
+            break;
+        }
+      });
+  
+      const saldo = totalGanhos - totalGastos;
+  
+      return res.status(200).json({ renda_total: saldo });
+    } catch (error) {
+      console.error("Erro ao obter saldo como renda atual:", error);
+      return res
+        .status(500)
+        .json({
+          message: "Erro ao obter saldo como renda atual.",
+          error: error.message,
+        });
+    }
+  }
+  
+
+  // Método para obter resumo financeiro: gastos, ganhos e saldo
+  static async resumoFinanceiro(req, res) {
+    const { fk_id_usuario } = req.params;
+
+    if (!fk_id_usuario) {
+      return res.status(400).json({ message: "ID do usuário é necessário." });
+    }
+
+    try {
+      // Obter todas as transações do banco de dados para o mês atual
+      const [financasResults] = await db.query(
+        `
+          SELECT tipo_transacao, valor, data, frequencia
+          FROM financa
+          WHERE fk_id_usuario = ? 
+            AND MONTH(data) = MONTH(CURRENT_DATE) 
+            AND YEAR(data) = YEAR(CURRENT_DATE)
+        `,
+        [fk_id_usuario]
+      );
+
+      if (financasResults.length === 0) {
+        return res.status(404).json({ message: "Nenhuma transação encontrada." });
+      }
+
+      let totalGastos = 0;
+      let totalGanhos = 0;
+      const dataAtual = moment();
+
+      financasResults.forEach(({ tipo_transacao, valor, data, frequencia }) => {
+        const dataInicio = moment(data);
+        let contagem = 0;
+
+        // Calcular a contagem com base na frequência usando switch case
+        switch (frequencia) {
+          case 'Diária':
+            const diasDiferenca = dataAtual.diff(dataInicio, 'days');
+            contagem = diasDiferenca + 1; // +1 para incluir o dia de início
+            break;
+
+          case 'Semanal':
+            const semanasDiferenca = Math.floor(dataAtual.diff(dataInicio, 'weeks'));
+            contagem = semanasDiferenca + 1; // +1 para incluir a primeira semana
+            break;
+
+          case 'Mensal':
+            const mesesDiferenca = Math.floor(dataAtual.diff(dataInicio, 'months'));
+            contagem = mesesDiferenca + 1; // +1 para incluir o primeiro mês
+            break;
+
+          case 'Anual':
+            const anosDiferenca = Math.floor(dataAtual.diff(dataInicio, 'years'));
+            contagem = anosDiferenca + 1; // +1 para incluir o primeiro ano
+            break;
+
+          default:
+            contagem = 1; // Para transações únicas ou outras frequências não especificadas
+            break;
+        }
+
+        // Somar os valores de acordo com a contagem
+        if (tipo_transacao === "Gasto") {
+          totalGastos += parseFloat(valor) * contagem;
+        } else if (tipo_transacao === "Ganho") {
+          totalGanhos += parseFloat(valor) * contagem;
+        }
+      });
+
+      const saldo = totalGanhos - totalGastos;
+
+      return res.status(200).json({
+        ganhos: totalGanhos,
+        gastos: totalGastos,
+        saldo: saldo,
+      });
+    } catch (error) {
+      console.error("Erro ao obter resumo financeiro:", error);
+      return res.status(500).json({
+        message: "Erro ao obter resumo financeiro.",
+        error: error.message,
+      });
+    }
+  }
+
+
+  // Método para obter todas as transações em um único endpoint, incluindo lógica de diária, semanal, mensal e anual
+  static async transacoes(req, res) {
+    const { fk_id_usuario } = req.params;
+
+    if (!fk_id_usuario) {
+      return res.status(400).json({ message: "ID do usuário é necessário." });
+    }
+
+    try {
+      // Obter todas as transações do banco de dados
+      const [transacoes] = await db.query(
+        `
+          SELECT *
+          FROM financa
+          WHERE fk_id_usuario = ?
+          ORDER BY 
+            CASE 
+              WHEN frequencia = 'Única' THEN 1
+              WHEN frequencia = 'Diária' THEN 2
+              WHEN frequencia = 'Semanal' THEN 3
+              WHEN frequencia = 'Mensal' THEN 4
+              WHEN frequencia = 'Anual' THEN 5
+              ELSE 6
+            END
+        `,
+        [fk_id_usuario]
+      );
+
+      if (transacoes.length === 0) {
+        return res.status(404).json({ message: "Nenhuma transação encontrada." });
+      }
+
+      const transacoesFinal = [];
+
+      transacoes.forEach((transacao) => {
+        const dataInicio = moment(transacao.data_inicio); // Supondo que a coluna data_inicio exista
+        const dataAtual = moment();
+
+        // Para transações que só devem ocorrer futuramente
+        let proximaDataTransacao;
+
+        if (transacao.frequencia === 'Diária') {
+          // Calcular próxima data para transações diárias
+          const diasDiferenca = dataAtual.diff(dataInicio, 'days');
+          if (diasDiferenca >= 0) {
+            proximaDataTransacao = dataInicio.clone().add(diasDiferenca, 'days');
+          }
+        } else if (transacao.frequencia === 'Semanal') {
+          // Calcular próxima data para transações semanais
+          const semanasDiferenca = Math.floor(dataAtual.diff(dataInicio, 'weeks'));
+          proximaDataTransacao = dataInicio.clone().add(semanasDiferenca, 'weeks');
+
+          if (dataAtual.isAfter(proximaDataTransacao, 'day')) {
+            proximaDataTransacao = proximaDataTransacao.add(1, 'week');
+          }
+        } else if (transacao.frequencia === 'Mensal') {
+          // Calcular próxima data para transações mensais
+          proximaDataTransacao = dataInicio.clone();
+          while (proximaDataTransacao.isBefore(dataAtual, 'day')) {
+            proximaDataTransacao = proximaDataTransacao.add(1, 'month');
+            const ultimoDiaMes = proximaDataTransacao.endOf('month').date();
+            if (proximaDataTransacao.date() > ultimoDiaMes) {
+              proximaDataTransacao.date(ultimoDiaMes);
+            }
+          }
+        } else if (transacao.frequencia === 'Anual') {
+          // Calcular próxima data para transações anuais
+          proximaDataTransacao = dataInicio.clone();
+          while (proximaDataTransacao.isBefore(dataAtual, 'day')) {
+            proximaDataTransacao = proximaDataTransacao.add(1, 'year');
+            const ultimoDiaMes = proximaDataTransacao.endOf('month').date();
+            if (proximaDataTransacao.date() > ultimoDiaMes) {
+              proximaDataTransacao.date(ultimoDiaMes);
+            }
+          }
+        } else {
+          // Transações únicas ou outras frequências não processadas
+          proximaDataTransacao = dataInicio;
+        }
+
+        // Verifica se a próxima transação deve ocorrer hoje
+        if (dataAtual.isSame(proximaDataTransacao, 'day')) {
+          transacoesFinal.push({
+            ...transacao,
+            data_gerada: dataAtual.format('YYYY-MM-DD'),
+          });
+        }
+      });
+
+      return res.status(200).json({ transacoes: transacoesFinal });
+    } catch (error) {
+      console.error("Erro ao obter transações:", error);
+      return res.status(500).json({ message: "Erro ao obter transações.", error: error.message });
+    }
+  }
 };

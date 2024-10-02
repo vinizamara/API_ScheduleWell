@@ -20,15 +20,16 @@ router.get('/getAnotacao/:idUsuario', AnotacoesController.getNota);
 router.put('/updateNota/:idAnotacao', AnotacoesController.updateNota);
 router.delete('/deleteNota/:idAnotacao', AnotacoesController.deleteNota); 
 
-//Rotas de Anotações de Finanças
+// Rotas de Finanças
 router.post('/criarFinanca/', FinancasController.criarFinanca);
 router.get('/listarFinancas/:fk_id_usuario', FinancasController.listarFinancas);
 router.put('/atualizarFinanca/:id_financa', FinancasController.atualizarFinanca);
 router.delete('/deletarFinanca/:id_financa', FinancasController.deletarFinanca);
 
-//Rotas de Consulta de Finanças
-router.get('/gastosporMes/:fk_id_usuario', financeiroController.gastosporMes);
-
+// Rotas de Consulta de Finanças
+router.get('/obterRendaTotal/:fk_id_usuario', financeiroController.obterRendaTotal);
+router.get('/resumoFinanceiro/:fk_id_usuario', financeiroController.resumoFinanceiro);
+router.get('/transacoes/:fk_id_usuario', financeiroController.transacoes);
 
 // Rotas de Checklist
 router.post('/postChecklist/', ChecklistController.postChecklist);
