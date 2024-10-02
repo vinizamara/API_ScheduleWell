@@ -55,9 +55,10 @@ module.exports = class itemChecklistController {
 
   // Atualizar Item do Checklist
   static async updateItemChecklist(req, res) {
-    const { fkIdChecklist, texto, concluido } = req.body;
+    const { idItemChecklist } = req.params;
+    const { texto, concluido } = req.body;
 
-    if (!fkIdChecklist) {
+    if (!idItemChecklist) {
       return res.status(400).json({ message: "ID do item do checklist é obrigatório." });
     }
 
@@ -65,9 +66,9 @@ module.exports = class itemChecklistController {
       // Verifica se o item existe
       const checkItemQuery = `
         SELECT * FROM item_checklist
-        WHERE FK_ID_Checklist = ?
+        WHERE id_item_checklist = ?
       `;
-      const [checkResult] = await db.execute(checkItemQuery, [fkIdChecklist]);
+      const [checkResult] = await db.execute(checkItemQuery, [idItemChecklist]);
 
       if (checkResult.length === 0) {
         return res.status(404).json({
@@ -92,8 +93,8 @@ module.exports = class itemChecklistController {
         queryParams.push(concluido);
       }
 
-      updateQuery += "WHERE FK_ID_Checklist = ?";
-      queryParams.push(fkIdChecklist);
+      updateQuery += "WHERE id_item_checklist = ?";
+      queryParams.push(idItemChecklist);
 
       const [updateResult] = await db.execute(updateQuery, queryParams);
 
@@ -117,9 +118,9 @@ module.exports = class itemChecklistController {
 
   // Deletar Item do Checklist
   static async deleteItemChecklist(req, res) {
-    const { fkIdChecklist } = req.params;
+    const { idItemChecklist } = req.params;
 
-    if (!fkIdChecklist) {
+    if (!idItemChecklist) {
       return res.status(400).json({ message: "ID do item do checklist é obrigatório." });
     }
 
@@ -128,7 +129,7 @@ module.exports = class itemChecklistController {
         DELETE FROM item_checklist
         WHERE id_item_checklist = ?
       `;
-      const [deleteResult] = await db.execute(deleteQuery, [fkIdChecklist]);
+      const [deleteResult] = await db.execute(deleteQuery, [idItemChecklist]);
 
       if (deleteResult.affectedRows === 0) {    
         return res.status(404).json({

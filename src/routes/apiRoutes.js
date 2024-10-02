@@ -39,7 +39,7 @@ router.delete('/deleteChecklist/:idChecklist', ChecklistController.deleteCheckli
 // Rotas de Item de Checklist
 router.post('/postItemChecklist/', ItemChecklistController.postItemChecklist);
 router.get('/getItemChecklist/:idChecklist', ItemChecklistController.getItemChecklist);
-router.put('/updateItemChecklist/', ItemChecklistController.updateItemChecklist);
-router.delete('/deleteItemChecklist/:fkIdChecklist', ItemChecklistController.deleteItemChecklist);
+router.put('/updateItemChecklist/:idItemChecklist', ItemChecklistController.updateItemChecklist);
+router.delete('/deleteItemChecklist/:idItemChecklist', ItemChecklistController.deleteItemChecklist);
 
 module.exports = router;
