@@ -18,7 +18,7 @@ CREATE TABLE financa (
     data DATE NOT NULL,
     tipo_transacao ENUM('Gasto', 'Ganho') NOT NULL,
     valor DECIMAL(10, 2) NOT NULL,
-    frequencia ENUM('Única', 'Diária', 'Semanal', 'Mensal', 'Anual') NOT NULL,
+    frequencia ENUM('Unica', 'Diaria', 'Semanal', 'Mensal', 'Anual') NOT NULL,
     FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id_usuario)
 );
 
