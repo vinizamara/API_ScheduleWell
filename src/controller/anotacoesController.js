@@ -13,10 +13,10 @@ module.exports = class AnotacoesController {
 
     try {
       const [result] = await db.execute(query, [fk_id_usuario, data, titulo, descricao]);
-      res.status(201).json({ message: "Registro inserido com sucesso", result });
+      res.status(201).json({ message: "Anotação de texto inserida com sucesso", result });
     } catch (error) {
       console.error('Error details:', error);
-      res.status(500).json({ message: "Erro ao inserir registro", error: error.message });
+      res.status(500).json({ message: "Erro ao inserir anotação de texto", error: error.message });
     }
   }
 
@@ -98,7 +98,7 @@ module.exports = class AnotacoesController {
       }
 
       // Retorna sucesso
-      res.status(200).json({ message: "Anotação atualizada com sucesso." });
+      res.status(200).json({ message: "Anotação de texto atualizada com sucesso." });
     } catch (error) {
       console.error('Error details:', error);
       res.status(500).json({ message: "Erro ao atualizar a anotação.", error: error.message });
@@ -128,7 +128,7 @@ module.exports = class AnotacoesController {
         return res.status(404).json({ message: "Nenhuma anotação encontrada com o ID especificado." });
       }
 
-      res.status(200).json({ message: "Anotação deletada com sucesso." });
+      res.status(200).json({ message: "Anotação de texto deletada com sucesso." });
     } catch (error) {
       console.error('Error details:', error);
       res.status(500).json({ message: "Erro ao deletar a anotação.", error: error.message });

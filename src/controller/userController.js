@@ -7,7 +7,7 @@ module.exports = class userController {
         const { nome, senha, confirmarSenha, email } = req.body;
 
         if (!nome || !senha || !confirmarSenha || !email) {
-            return res.status(400).json({ error: 'Nome, senha, confirmação de senha e email são obrigatórios' });
+            return res.status(400).json({ error: 'É necessário preencher todos os campos' });
         }
 
         if (senha !== confirmarSenha) {
@@ -35,7 +35,7 @@ module.exports = class userController {
             );
 
             if (existingUser.length > 0) {
-                return res.status(400).json({ error: 'Email já está em uso' });
+                return res.status(400).json({ error: 'Já existe um usuário com esse e-mail' });
             }
 
             const hashedSenha = await bcrypt.hash(senha, 10);
@@ -119,7 +119,7 @@ module.exports = class userController {
 
             await db.query('DELETE FROM usuario WHERE id_usuario = ?', [id]);
 
-            return res.status(200).json({ message: 'Usuário deletado com sucesso' });
+            return res.status(200).json({ message: 'Conta deletada com sucesso' });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ error: 'Erro ao deletar usuário' });
@@ -131,7 +131,7 @@ module.exports = class userController {
     
         // Verifica se email e senha foram fornecidos
         if (!email || !senha) {
-          return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+          return res.status(400).json({ error: 'É necessário preencher todos os campos' });
         }
     
         const query = 'SELECT * FROM usuario WHERE email = ?';

@@ -14,7 +14,7 @@ module.exports = class checklistController {
         const query = `INSERT INTO checklist (fk_id_usuario, titulo, data, descricao) VALUES (?, ?, ?, ?)`;
         const [result] = await db.execute(query, [fkIdUsuario, titulo, data, descricao]);
         console.log(result);
-        res.status(201).json({ message: "Checklist inserido com sucesso", result });
+        res.status(201).json({ message: "Anotação de listagem cridada com sucesso", result });
       } catch (error) {
         console.error(error);
         // Extrai a mensagem de erro específica se disponível
@@ -93,7 +93,7 @@ module.exports = class checklistController {
             return res.status(404).json({ message: "Nenhum checklist encontrado com o ID especificado." });
         }
 
-        res.status(200).json({ message: "Checklist atualizado com sucesso." });
+        res.status(200).json({ message: "Anotação de listagem atualizado com sucesso." });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erro ao atualizar o checklist." });
@@ -118,10 +118,10 @@ module.exports = class checklistController {
       const [deleteResult] = await db.execute(deleteChecklistQuery, [idChecklist]);
 
       if (deleteResult.affectedRows === 0) {
-        return res.status(404).json({ message: "Nenhum checklist encontrado com o ID especificado." });
+        return res.status(404).json({ message: "Nenhuma anotação de listagem encontrada com o ID especificado." });
       }
 
-      res.status(200).json({ message: "Checklist e seus itens deletados com sucesso." });
+      res.status(200).json({ message: "Anotação de listagem deletada com sucesso." });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Erro ao deletar o checklist e seus itens." });
