@@ -19,7 +19,7 @@ CREATE TABLE financa (
     tipo_transacao ENUM('Gasto', 'Ganho') NOT NULL,
     valor DECIMAL(10, 2) NOT NULL,
     frequencia ENUM('Unica', 'Diaria', 'Semanal', 'Mensal', 'Anual') NOT NULL,
-    FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id_usuario)
+    FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
 );
 
 -- criação da tabela de anotacao
@@ -29,7 +29,7 @@ CREATE TABLE anotacao (
     titulo VARCHAR(100) NOT NULL,
     data DATE NOT NULL,
     descricao TEXT,
-    FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id_usuario)
+    FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
 );
 
 -- criação da tabela de checklist
@@ -39,7 +39,7 @@ CREATE TABLE checklist (
     titulo VARCHAR(100) NOT NULL,
     data DATE NOT NULL,
     descricao TEXT,
-    FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id_usuario)
+    FOREIGN KEY (fk_id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
 );
 
 CREATE TABLE item_checklist (
@@ -47,5 +47,5 @@ CREATE TABLE item_checklist (
     fk_id_checklist INT NOT NULL,
     texto VARCHAR(255) NOT NULL,
     concluido BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (fk_id_checklist) REFERENCES checklist(id_checklist)
+    FOREIGN KEY (fk_id_checklist) REFERENCES checklist(id_checklist) ON DELETE CASCADE
 );
