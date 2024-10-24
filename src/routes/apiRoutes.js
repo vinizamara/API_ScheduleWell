@@ -6,6 +6,7 @@ const FinancasController = require('../controller/financasController');
 const ChecklistController = require('../controller/checklistController');
 const ItemChecklistController = require('../controller/itemChecklistController');
 const financeiroController = require('../controller/financeiroController');
+const pesquisaController = require('../controller/pesquisaController');
 
 //Rotas do Usuario
 router.post('/createUser/', UserController.createUser);
@@ -42,5 +43,8 @@ router.post('/postItemChecklist/', ItemChecklistController.postItemChecklist);
 router.get('/getItemChecklist/:idChecklist', ItemChecklistController.getItemChecklist);
 router.put('/updateItemChecklist/:idItemChecklist', ItemChecklistController.updateItemChecklist);
 router.delete('/deleteItemChecklist/:idItemChecklist', ItemChecklistController.deleteItemChecklist);
+
+//Rotas de pesquisa
+router.get('/buscar-titulos/:fk_id_usuario/:titulo', pesquisaController.buscarTitulosSemelhantes);
 
 module.exports = router;
