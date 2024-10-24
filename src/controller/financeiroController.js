@@ -26,8 +26,8 @@ module.exports = class financeiroController {
           .json({ message: "Nenhuma transação encontrada." });
       }
   
-      let totalGastos = 0;
-      let totalGanhos = 0;
+      let totalDespesa = 0;
+      let totalReceita = 0;
   
       const dataAtual = moment(); // Usando moment.js para manipular datas
   
@@ -35,23 +35,23 @@ module.exports = class financeiroController {
         const dataInicio = moment(data);
   
         switch (frequencia) {
-          case "Diária":
+          case "Diaria":
             // Conta a quantidade de dias desde a data de início até hoje
             const diasDiferenca = dataAtual.diff(dataInicio, 'days') + 1; // +1 para incluir o dia atual
-            if (tipo_transacao === "Gasto") {
-              totalGastos += parseFloat(valor) * diasDiferenca;
-            } else if (tipo_transacao === "Ganho") {
-              totalGanhos += parseFloat(valor) * diasDiferenca;
+            if (tipo_transacao === "Despesa") {
+              totalDespesa += parseFloat(valor) * diasDiferenca;
+            } else if (tipo_transacao === "Receita") {
+              totalReceita += parseFloat(valor) * diasDiferenca;
             }
             break;
   
           case "Semanal":
             const semanasDiferenca = Math.floor(dataAtual.diff(dataInicio, 'weeks'));
             if (semanasDiferenca >= 0) {
-              if (tipo_transacao === "Gasto") {
-                totalGastos += parseFloat(valor) * (semanasDiferenca + 1); // +1 para incluir a semana atual
-              } else if (tipo_transacao === "Ganho") {
-                totalGanhos += parseFloat(valor) * (semanasDiferenca + 1);
+              if (tipo_transacao === "Despesa") {
+                totalDespesa += parseFloat(valor) * (semanasDiferenca + 1); // +1 para incluir a semana atual
+              } else if (tipo_transacao === "Receita") {
+                totalReceita += parseFloat(valor) * (semanasDiferenca + 1);
               }
             }
             break;
@@ -59,10 +59,10 @@ module.exports = class financeiroController {
           case "Mensal":
             const mesesDiferenca = Math.floor(dataAtual.diff(dataInicio, 'months'));
             if (mesesDiferenca >= 0) {
-              if (tipo_transacao === "Gasto") {
-                totalGastos += parseFloat(valor) * (mesesDiferenca + 1); // +1 para incluir o mês atual
-              } else if (tipo_transacao === "Ganho") {
-                totalGanhos += parseFloat(valor) * (mesesDiferenca + 1);
+              if (tipo_transacao === "Despesa") {
+                totalDespesa += parseFloat(valor) * (mesesDiferenca + 1); // +1 para incluir o mês atual
+              } else if (tipo_transacao === "Receita") {
+                totalReceita += parseFloat(valor) * (mesesDiferenca + 1);
               }
             }
             break;
@@ -70,26 +70,26 @@ module.exports = class financeiroController {
           case "Anual":
             const anosDiferenca = Math.floor(dataAtual.diff(dataInicio, 'years'));
             if (anosDiferenca >= 0) {
-              if (tipo_transacao === "Gasto") {
-                totalGastos += parseFloat(valor) * (anosDiferenca + 1); // +1 para incluir o ano atual
-              } else if (tipo_transacao === "Ganho") {
-                totalGanhos += parseFloat(valor) * (anosDiferenca + 1);
+              if (tipo_transacao === "Despesa") {
+                totalDespesa += parseFloat(valor) * (anosDiferenca + 1); // +1 para incluir o ano atual
+              } else if (tipo_transacao === "Receita") {
+                totalReceita += parseFloat(valor) * (anosDiferenca + 1);
               }
             }
             break;
   
           default:
             // Para transações únicas ou não reconhecidas
-            if (tipo_transacao === "Gasto") {
-              totalGastos += parseFloat(valor);
-            } else if (tipo_transacao === "Ganho") {
-              totalGanhos += parseFloat(valor);
+            if (tipo_transacao === "Despesa") {
+              totalDespesa += parseFloat(valor);
+            } else if (tipo_transacao === "Receita") {
+              totalReceita += parseFloat(valor);
             }
             break;
         }
       });
   
-      const saldo = totalGanhos - totalGastos;
+      const saldo = totalReceita - totalDespesa;
   
       return res.status(200).json({ renda_total: saldo });
     } catch (error) {
@@ -104,7 +104,7 @@ module.exports = class financeiroController {
   }
   
 
-  // Método para obter resumo financeiro: gastos, ganhos e saldo
+  // Método para obter resumo financeiro: Despesa, Receita e saldo
   static async resumoFinanceiro(req, res) {
     const { fk_id_usuario } = req.params;
 
@@ -129,8 +129,8 @@ module.exports = class financeiroController {
         return res.status(404).json({ message: "Nenhuma transação encontrada." });
       }
 
-      let totalGastos = 0;
-      let totalGanhos = 0;
+      let totalDespesa = 0;
+      let totalReceita = 0;
       const dataAtual = moment();
 
       financasResults.forEach(({ tipo_transacao, valor, data, frequencia }) => {
@@ -139,7 +139,7 @@ module.exports = class financeiroController {
 
         // Calcular a contagem com base na frequência usando switch case
         switch (frequencia) {
-          case 'Diária':
+          case 'Diaria':
             const diasDiferenca = dataAtual.diff(dataInicio, 'days');
             contagem = diasDiferenca + 1; // +1 para incluir o dia de início
             break;
@@ -165,18 +165,18 @@ module.exports = class financeiroController {
         }
 
         // Somar os valores de acordo com a contagem
-        if (tipo_transacao === "Gasto") {
-          totalGastos += parseFloat(valor) * contagem;
-        } else if (tipo_transacao === "Ganho") {
-          totalGanhos += parseFloat(valor) * contagem;
+        if (tipo_transacao === "Despesa") {
+          totalDespesa += parseFloat(valor) * contagem;
+        } else if (tipo_transacao === "Receita") {
+          totalReceita += parseFloat(valor) * contagem;
         }
       });
 
-      const saldo = totalGanhos - totalGastos;
+      const saldo = totalReceita - totalDespesa;
 
       return res.status(200).json({
-        ganhos: totalGanhos,
-        gastos: totalGastos,
+        Receita: totalReceita,
+        Despesa: totalDespesa,
         saldo: saldo,
       });
     } catch (error) {
@@ -206,8 +206,8 @@ module.exports = class financeiroController {
           WHERE fk_id_usuario = ?
           ORDER BY 
             CASE 
-              WHEN frequencia = 'Única' THEN 1
-              WHEN frequencia = 'Diária' THEN 2
+              WHEN frequencia = 'Unica' THEN 1
+              WHEN frequencia = 'Diaria' THEN 2
               WHEN frequencia = 'Semanal' THEN 3
               WHEN frequencia = 'Mensal' THEN 4
               WHEN frequencia = 'Anual' THEN 5
@@ -230,7 +230,7 @@ module.exports = class financeiroController {
         // Para transações que só devem ocorrer futuramente
         let proximaDataTransacao;
 
-        if (transacao.frequencia === 'Diária') {
+        if (transacao.frequencia === 'Diaria') {
           // Calcular próxima data para transações diárias
           const diasDiferenca = dataAtual.diff(dataInicio, 'days');
           if (diasDiferenca >= 0) {
