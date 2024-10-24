@@ -8,7 +8,7 @@ module.exports = class UserController {
 
         // Validações de campos obrigatórios
         if (!nome || !senha || !confirmarSenha || !email) {
-            return res.status(400).json({ error: 'Nome, senha, confirmação de senha e email são obrigatórios' });
+            return res.status(400).json({ error: 'É necessário preencher todos os campos' });
         }
 
         // Verifica se as senhas coincidem
@@ -37,7 +37,7 @@ module.exports = class UserController {
             // Verifica se o email já está em uso
             const [existingUser] = await db.query('SELECT * FROM usuario WHERE email = ?', [email]);
             if (existingUser.length > 0) {
-                return res.status(400).json({ error: 'Email já está em uso' });
+                return res.status(400).json({ error: 'Já existe um usuário com esse e-mail' });
             }
 
             // Cria o hash da senha
@@ -133,7 +133,7 @@ module.exports = class UserController {
             // Deleta o usuário
             await db.query('DELETE FROM usuario WHERE id_usuario = ?', [id]);
 
-            return res.status(200).json({ message: 'Usuário deletado com sucesso' });
+            return res.status(200).json({ message: 'Conta deletada com sucesso' });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ error: 'Erro ao deletar usuário' });
@@ -146,7 +146,7 @@ module.exports = class UserController {
 
         // Verifica se email e senha foram fornecidos
         if (!email || !senha) {
-            return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+          return res.status(400).json({ error: 'É necessário preencher todos os campos' });
         }
 
         const query = 'SELECT * FROM usuario WHERE email = ?';
