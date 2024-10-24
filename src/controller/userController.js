@@ -70,19 +70,19 @@ module.exports = class UserController {
         const { nome, email, senha } = req.body;
 
         try {
-            // Verifica se o usuário existe
-            const [existingUser] = await db.query('SELECT * FROM usuario WHERE id_usuario = ?', [id]);
-            if (existingUser.length === 0) {
-                return res.status(404).json({ error: 'Usuário não encontrado' });
-            }
-
             const updates = [];
             const params = [];
 
             // Atualiza o nome se fornecido
             if (nome) {
-                updates.push('nome = ?');
-                params.push(nome);
+                // Verifica o comprimento do nome
+                if (nome.length < 3) {
+                    return res.status(400).json({ error: 'O nome deve ter pelo menos 3 caracteres' });
+                }
+                else{
+                    updates.push('nome = ?');
+                    params.push(nome);
+                }
             }
 
             // Verifica se o e-mail já está em uso por outro usuário
@@ -91,15 +91,29 @@ module.exports = class UserController {
                 if (existingEmail.length > 0) {
                     return res.status(400).json({ error: 'E-mail já está em uso por outro usuário' });
                 }
-                updates.push('email = ?'); // Atualiza o email se não houver conflito
-                params.push(email);
+                // Verifica o formato do email
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    return res.status(400).json({ error: 'Formato de email inválido' });
+                }
+                else{
+                    updates.push('email = ?'); // Atualiza o email se não houver conflito
+                    params.push(email);
+                }
             }
 
             // Atualiza a senha se fornecida
             if (senha) {
-                const hashedSenha = await bcrypt.hash(senha, 10);
-                updates.push('senha = ?');
-                params.push(hashedSenha);
+                // Valida a força da senha
+                const senhaRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+                if (!senhaRegex.test(senha)) {
+                    return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres, incluindo letras e números' });
+                }
+                else{
+                    const hashedSenha = await bcrypt.hash(senha, 10);
+                    updates.push('senha = ?');
+                    params.push(hashedSenha);
+                }
             }
 
             // Verifica se há atualizações
