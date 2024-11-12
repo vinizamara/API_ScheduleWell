@@ -8,6 +8,7 @@ services:
       - "5000:5000" # Mapeia a porta 5000 do container para a porta 5000 da máquina
     volumes:
       - .:/usr/app # Monta o diretório da máquina no container
+      - /etc/letsencrypt:/etc/letsencrypt
     working_dir: /usr/app # Define o diretório de trabalho dentro do container
     depends_on:
       - db # O serviço app depende do serviço db
